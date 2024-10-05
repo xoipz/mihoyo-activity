@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 void main() {
   runApp(MyApp());
@@ -43,8 +45,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
     _checkNetworkStatus();
     _subscription =
         _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
-    fetchGenshinAnnouncements();
-    fetchStarRailAnnouncements();
+    _loadCachedAnnouncements();
   }
 
   @override
@@ -72,11 +73,33 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
     });
   }
 
+  Future<void> _loadCachedAnnouncements() async {
+    final prefs = await SharedPreferences.getInstance();
+    final genshinData = prefs.getString('genshinAnnouncements');
+    final starRailData = prefs.getString('starRailAnnouncements');
+
+    if (genshinData != null) {
+      setState(() {
+        genshinAnnouncements = json.decode(genshinData);
+      });
+    }
+
+    if (starRailData != null) {
+      setState(() {
+        starRailAnnouncements = json.decode(starRailData);
+      });
+    }
+
+    fetchGenshinAnnouncements();
+    fetchStarRailAnnouncements();
+  }
+
   Future<void> fetchGenshinAnnouncements() async {
     setState(() {
       isLoading = true;
     });
 
+    final prefs = await SharedPreferences.getInstance();
     final url = Uri.parse(
         'https://hk4e-ann-api.mihoyo.com/common/hk4e_cn/announcement/api/getAnnList?game=hk4e&game_biz=hk4e_cn&bundle_id=hk4e_cn&platform=pc&level=55&uid=100000000&lang=zh-cn&region=cn_gf01');
 
@@ -109,10 +132,10 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
               {'type_label': '游戏公告', 'list': gameAnnouncements},
             ];
           });
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to fetch Genshin announcements.')),
-          );
+
+          // Save to cache
+          await prefs.setString(
+              'genshinAnnouncements', json.encode(genshinAnnouncements));
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -135,6 +158,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
       isLoading = true;
     });
 
+    final prefs = await SharedPreferences.getInstance();
     final url = Uri.parse(
         'https://sg-hkrpg-api.hoyoverse.com/common/hkrpg_global/announcement/api/getAnnList?game=hkrpg&game_biz=hkrpg_global&lang=zh-cn&bundle_id=hkrpg_global&level=55&platform=pc&region=prod_official_cht&uid=900000000');
 
@@ -166,10 +190,10 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
               {'type_label': '游戏公告', 'list': starRailNotices2},
             ];
           });
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to fetch Star Rail announcements.')),
-          );
+
+          // Save to cache
+          await prefs.setString(
+              'starRailAnnouncements', json.encode(starRailAnnouncements));
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -347,12 +371,20 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                         ? Expanded(
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8.0),
-                              child: Image.network(
-                                item['banner']?.isNotEmpty == true
+                              child: CachedNetworkImage(
+                                imageUrl: item['banner']?.isNotEmpty == true
                                     ? item['banner']
                                     : item['img'],
                                 fit: BoxFit.cover,
                                 width: double.infinity,
+                                placeholder: (context, url) =>
+                                    Center(child: CircularProgressIndicator()),
+                                errorWidget: (context, url, error) =>
+                                    Image.asset(
+                                  'assets/placeholder.png',
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                ),
                               ),
                             ),
                           )

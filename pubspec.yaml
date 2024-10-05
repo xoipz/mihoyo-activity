@@ -38,6 +38,8 @@ dependencies:
   http: ^1.2.2 # 添加这个来确保项目能够请求 HTTP 数据
   intl: ^0.17.0
   connectivity_plus: ^4.0.0
+  shared_preferences: ^2.0.15
+  cached_network_image: ^3.2.1
 
 dev_dependencies:
   flutter_test:
