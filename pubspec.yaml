@@ -37,6 +37,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^1.2.2 # 添加这个来确保项目能够请求 HTTP 数据
   intl: ^0.17.0
+  connectivity_plus: ^4.0.0
 
 dev_dependencies:
   flutter_test:
