@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    android:label="米哈游活动"
     android:usesCleartextTraffic="true"
     android:networkSecurityConfig="@xml/network_security_config">
 
