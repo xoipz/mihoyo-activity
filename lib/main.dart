@@ -138,10 +138,10 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
             }
           }
 
-          activityAnnouncements.sort((a, b) => _getRemainingDays(a['end_time'])
-              .compareTo(_getRemainingDays(b['end_time'])));
-          gameAnnouncements.sort((a, b) => _getRemainingDays(a['end_time'])
-              .compareTo(_getRemainingDays(b['end_time'])));
+          activityAnnouncements.sort((a, b) => _getRemainingDuration(a['end_time'])
+              .compareTo(_getRemainingDuration(b['end_time'])));
+          gameAnnouncements.sort((a, b) => _getRemainingDuration(a['end_time'])
+              .compareTo(_getRemainingDuration(b['end_time'])));
 
           setState(() {
             genshinAnnouncements = [
@@ -187,7 +187,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
         if (jsonData['retcode'] == 0) {
           List<dynamic> allAnnouncements = jsonData['data']['list'] ?? [];
           List<dynamic> picAnnouncements =
-              jsonData['data']['pic_list'][0]['type_list'] ?? [];
+              (jsonData['data']['pic_list']?.isNotEmpty ?? false) ? jsonData['data']['pic_list'][0]['type_list'] ?? [] : [];
           List<dynamic> starRailNotices = [];
           List<dynamic> starRailNotices2 = [];
 
@@ -198,8 +198,8 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
             starRailNotices.addAll(category['list'] ?? []);
           }
 
-          starRailNotices.sort((a, b) => _getRemainingDays(a['end_time'])
-              .compareTo(_getRemainingDays(b['end_time'])));
+          starRailNotices.sort((a, b) => _getRemainingDuration(a['end_time'])
+              .compareTo(_getRemainingDuration(b['end_time'])));
 
           setState(() {
             starRailAnnouncements = [
@@ -228,19 +228,12 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
     }
   }
 
-  int _getRemainingDays(String endTime) {
+  Duration _getRemainingDuration(String endTime) {
     try {
       DateTime endDate = DateFormat("yyyy-MM-dd HH:mm:ss").parse(endTime);
-      Duration difference = endDate.difference(DateTime.now());
-      if (difference.inDays < 1) {
-        if (difference.inHours < 1) {
-          return difference.inMinutes;
-        }
-        return difference.inHours;
-      }
-      return difference.inDays;
+      return endDate.difference(DateTime.now());
     } catch (e) {
-      return 0;
+      return Duration.zero;
     }
   }
 
@@ -380,14 +373,16 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
           itemCount: items.length,
           itemBuilder: (context, index) {
             final item = items[index];
-            int remainingTime = _getRemainingDays(item['end_time'] ?? '');
+            Duration remainingDuration = _getRemainingDuration(item['end_time'] ?? '');
             String remainingTimeText;
-            if (remainingTime < 1) {
-              remainingTimeText = '$remainingTime 分钟后结束';
-            } else if (remainingTime < 24) {
-              remainingTimeText = '$remainingTime 小时后结束';
+            if (remainingDuration.inDays > 0) {
+              remainingTimeText = '还有 ${remainingDuration.inDays} 天结束';
+            } else if (remainingDuration.inHours > 0) {
+              remainingTimeText = '还有 ${remainingDuration.inHours} 小时结束';
+            } else if (remainingDuration.inMinutes > 0) {
+              remainingTimeText = '还有 ${remainingDuration.inMinutes} 分钟结束';
             } else {
-              remainingTimeText = '$remainingTime 天后结束';
+              remainingTimeText = '活动已结束';
             }
 
             return Card(
