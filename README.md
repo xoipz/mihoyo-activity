@@ -4,3 +4,7 @@
 
 ![icon.png](./assets//icon.png)
 
+# 页面效果
+![alt text](image.png)
+
+![alt text](image-1.png)
