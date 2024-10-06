@@ -11,20 +11,37 @@ void main() {
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool isDarkMode = false;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '游戏活动',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+      theme: isDarkMode ? ThemeData.dark() : ThemeData.light(),
+      home: AnnouncementPage(
+        onToggleDarkMode: () {
+          setState(() {
+            isDarkMode = !isDarkMode;
+          });
+        },
+        isDarkMode: isDarkMode,
       ),
-      home: AnnouncementPage(),
     );
   }
 }
 
 class AnnouncementPage extends StatefulWidget {
+  final VoidCallback onToggleDarkMode;
+  final bool isDarkMode;
+
+  AnnouncementPage({required this.onToggleDarkMode, required this.isDarkMode});
+
   @override
   _AnnouncementPageState createState() => _AnnouncementPageState();
 }
@@ -214,7 +231,14 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
   int _getRemainingDays(String endTime) {
     try {
       DateTime endDate = DateFormat("yyyy-MM-dd HH:mm:ss").parse(endTime);
-      return endDate.difference(DateTime.now()).inDays;
+      Duration difference = endDate.difference(DateTime.now());
+      if (difference.inDays < 1) {
+        if (difference.inHours < 1) {
+          return difference.inMinutes;
+        }
+        return difference.inHours;
+      }
+      return difference.inDays;
     } catch (e) {
       return 0;
     }
@@ -246,6 +270,10 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
             ],
           ),
           actions: [
+            IconButton(
+              icon: Icon(widget.isDarkMode ? Icons.wb_sunny : Icons.nightlight_round),
+              onPressed: widget.onToggleDarkMode,
+            ),
             TextButton(
               onPressed: () {
                 setState(() {
@@ -255,7 +283,9 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
               },
               child: Text(
                 _selectedAnnouncementTab == 0 ? '活动公告' : '游戏公告',
-                style: TextStyle(color: Colors.black),
+                style: TextStyle(
+                  color: widget.isDarkMode ? Colors.white : Colors.black,
+                ),
               ),
             ),
             IconButton(
@@ -350,7 +380,15 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
           itemCount: items.length,
           itemBuilder: (context, index) {
             final item = items[index];
-            int remainingDays = _getRemainingDays(item['end_time'] ?? '');
+            int remainingTime = _getRemainingDays(item['end_time'] ?? '');
+            String remainingTimeText;
+            if (remainingTime < 1) {
+              remainingTimeText = '$remainingTime 分钟后结束';
+            } else if (remainingTime < 24) {
+              remainingTimeText = '$remainingTime 小时后结束';
+            } else {
+              remainingTimeText = '$remainingTime 天后结束';
+            }
 
             return Card(
               child: Padding(
@@ -406,7 +444,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                         Align(
                           alignment: Alignment.centerRight,
                           child: Text(
-                            '还有 $remainingDays 天结束',
+                            remainingTimeText,
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
