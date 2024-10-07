@@ -27,6 +27,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
   final Connectivity _connectivity = Connectivity();
   StreamSubscription<ConnectivityResult>? _subscription;
   late TabController _tabController;
+  bool _showAllAnnouncements = false; // 新增变量
 
   @override
   void initState() {
@@ -229,28 +230,30 @@ class _AnnouncementPageState extends State<AnnouncementPage>
           title: Text(
             '游戏活动',
             style: TextStyle(
-              fontWeight: FontWeight.bold, // 加粗字体
+              fontWeight: FontWeight.bold,
             ),
           ),
           actions: [
             TextButton(
               onPressed: () {
                 setState(() {
-                  // 切换公告类型
                   _selectedAnnouncementTab = (_selectedAnnouncementTab + 1) % 2;
                 });
               },
               child: Text(
                 _selectedAnnouncementTab == 0 ? '活动公告' : '游戏公告',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                ),
               ),
             ),
             IconButton(
-              icon: Icon(Icons.restore), // 显示所有公告的按钮图标
+              icon: Icon(_showAllAnnouncements
+                  ? Icons.filter_alt_off
+                  : Icons.filter_alt), // 切换显示图标
               onPressed: () {
                 setState(() {
-                  // 清空过滤条件，恢复显示所有公告
-                  announcementProvider.showAllAnnouncements();
+                  _showAllAnnouncements = !_showAllAnnouncements; // 切换显示状态
                 });
               },
             ),
@@ -376,15 +379,12 @@ class _AnnouncementPageState extends State<AnnouncementPage>
 
   Widget _buildAnnouncementList(
       List<dynamic> items, AnnouncementProvider announcementProvider) {
-    List<dynamic> filteredItems = items
-        .where((item) => !announcementProvider.markedAnnouncements
-            .contains(item['ann_id'].toString()))
-        .toList();
-
-    // 如果没有过滤条件，显示所有公告
-    if (announcementProvider.markedAnnouncements.isEmpty) {
-      filteredItems = items;
-    }
+    List<dynamic> filteredItems = _showAllAnnouncements
+        ? items // 如果显示所有公告，则不过滤
+        : items
+            .where((item) => !announcementProvider.markedAnnouncements
+                .contains(item['ann_id'].toString()))
+            .toList();
 
     return LayoutBuilder(
       builder: (context, constraints) {
