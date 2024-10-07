@@ -27,17 +27,15 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _loadDarkModePreference() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      isDarkMode = prefs.getBool('isDarkMode') ?? false;
-    });
+    isDarkMode = prefs.getBool('isDarkMode') ?? false;
+    setState(() {});
   }
 
   Future<void> _toggleDarkMode() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      isDarkMode = !isDarkMode;
-    });
+    isDarkMode = !isDarkMode;
     await prefs.setBool('isDarkMode', isDarkMode);
+    setState(() {});
   }
 
   @override
@@ -84,11 +82,10 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     _loadCachedAnnouncements();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
-      if (_tabController.indexIsChanging || _tabController.index != _selectedGameTab) {
-        setState(() {
-          _selectedGameTab = _tabController.index;
-          _selectedAnnouncementTab = 0;
-        });
+      if (_tabController.index != _selectedGameTab) {
+        _selectedGameTab = _tabController.index;
+        _selectedAnnouncementTab = 0;
+        setState(() {});
       }
     });
   }
@@ -114,9 +111,8 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     } else {
       status = '无网络';
     }
-    setState(() {
-      _connectionStatus = status;
-    });
+    _connectionStatus = status;
+    setState(() {});
   }
 
   Future<void> _loadCachedAnnouncements() async {
@@ -125,25 +121,22 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     final starRailData = prefs.getString('starRailAnnouncements');
 
     if (genshinData != null) {
-      setState(() {
-        genshinAnnouncements = json.decode(genshinData);
-      });
+      genshinAnnouncements = json.decode(genshinData);
     }
 
     if (starRailData != null) {
-      setState(() {
-        starRailAnnouncements = json.decode(starRailData);
-      });
+      starRailAnnouncements = json.decode(starRailData);
     }
+
+    setState(() {});
 
     fetchGenshinAnnouncements();
     fetchStarRailAnnouncements();
   }
 
   Future<void> fetchGenshinAnnouncements() async {
-    setState(() {
-      isLoading = true;
-    });
+    isLoading = true;
+    setState(() {});
 
     final prefs = await SharedPreferences.getInstance();
     final url = Uri.parse(
@@ -173,12 +166,10 @@ class _AnnouncementPageState extends State<AnnouncementPage>
           gameAnnouncements.sort((a, b) => _getRemainingDuration(a['end_time'])
               .compareTo(_getRemainingDuration(b['end_time'])));
 
-          setState(() {
-            genshinAnnouncements = [
-              {'type_label': '活动公告', 'list': activityAnnouncements},
-              {'type_label': '游戏公告', 'list': gameAnnouncements},
-            ];
-          });
+          genshinAnnouncements = [
+            {'type_label': '活动公告', 'list': activityAnnouncements},
+            {'type_label': '游戏公告', 'list': gameAnnouncements},
+          ];
 
           // Save to cache
           await prefs.setString(
@@ -194,16 +185,14 @@ class _AnnouncementPageState extends State<AnnouncementPage>
         SnackBar(content: Text('Error: $e')),
       );
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      isLoading = false;
+      setState(() {});
     }
   }
 
   Future<void> fetchStarRailAnnouncements() async {
-    setState(() {
-      isLoading = true;
-    });
+    isLoading = true;
+    setState(() {});
 
     final prefs = await SharedPreferences.getInstance();
     final url = Uri.parse(
@@ -233,12 +222,10 @@ class _AnnouncementPageState extends State<AnnouncementPage>
           starRailNotices.sort((a, b) => _getRemainingDuration(a['end_time'])
               .compareTo(_getRemainingDuration(b['end_time'])));
 
-          setState(() {
-            starRailAnnouncements = [
-              {'type_label': '活动公告', 'list': starRailNotices},
-              {'type_label': '游戏公告', 'list': starRailNotices2},
-            ];
-          });
+          starRailAnnouncements = [
+            {'type_label': '活动公告', 'list': starRailNotices},
+            {'type_label': '游戏公告', 'list': starRailNotices2},
+          ];
 
           // Save to cache
           await prefs.setString(
@@ -254,9 +241,8 @@ class _AnnouncementPageState extends State<AnnouncementPage>
         SnackBar(content: Text('Error: $e')),
       );
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      isLoading = false;
+      setState(() {});
     }
   }
 
@@ -310,22 +296,48 @@ class _AnnouncementPageState extends State<AnnouncementPage>
             ),
           ],
         ),
-        body: TabBarView(
-          controller: _tabController,
+        body: Row(
           children: [
-            _buildAnnouncementContent(genshinAnnouncements),
-            _buildAnnouncementContent(starRailAnnouncements),
+            if (isWideScreen)
+              NavigationRail(
+                selectedIndex: _selectedGameTab,
+                onDestinationSelected: (index) {
+                  _selectedGameTab = index;
+                  _selectedAnnouncementTab = 0;
+                  _tabController.animateTo(index);
+                  setState(() {});
+                },
+                labelType: NavigationRailLabelType.all,
+                destinations: [
+                  NavigationRailDestination(
+                    icon: Icon(Icons.gamepad),
+                    label: Text('原神'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.train),
+                    label: Text('星穹铁道'),
+                  ),
+                ],
+              ),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildAnnouncementContent(genshinAnnouncements),
+                  _buildAnnouncementContent(starRailAnnouncements),
+                ],
+              ),
+            ),
           ],
         ),
         bottomNavigationBar: !isWideScreen
             ? BottomNavigationBar(
                 currentIndex: _selectedGameTab,
                 onTap: (index) {
-                  setState(() {
-                    _selectedGameTab = index;
-                    _selectedAnnouncementTab = 0;
-                  });
+                  _selectedGameTab = index;
+                  _selectedAnnouncementTab = 0;
                   _tabController.animateTo(index);
+                  setState(() {});
                 },
                 items: [
                   BottomNavigationBarItem(
