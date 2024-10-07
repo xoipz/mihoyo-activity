@@ -69,7 +69,7 @@ IDI_APP_ICON            ICON                    "resources\\app_icon.ico"
 #if defined(FLUTTER_VERSION)
 #define VERSION_AS_STRING FLUTTER_VERSION
 #else
-#define VERSION_AS_STRING "1.0.0"
+#define VERSION_AS_STRING "1.0.2"
 #endif
 
 VS_VERSION_INFO VERSIONINFO
@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "flutter_application_1" "\0"
+            VALUE "CompanyName", "com.xmihoyo" "\0"
+            VALUE "FileDescription", "mihoyo activities" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "flutter_application_1" "\0"
+            VALUE "InternalName", "米哈游活动助手" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2024 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "flutter_application_1.exe" "\0"
-            VALUE "ProductName", "flutter_application_1" "\0"
+            VALUE "OriginalFilename", "米哈游活动助手.exe" "\0"
+            VALUE "ProductName", "米哈游活动助手" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
