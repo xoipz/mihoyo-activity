@@ -226,8 +226,25 @@ class _AnnouncementPageState extends State<AnnouncementPage>
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('游戏活动'),
+          title: Text(
+            '游戏活动',
+            style: TextStyle(
+              fontWeight: FontWeight.bold, // 加粗字体
+            ),
+          ),
           actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  // 切换公告类型
+                  _selectedAnnouncementTab = (_selectedAnnouncementTab + 1) % 2;
+                });
+              },
+              child: Text(
+                _selectedAnnouncementTab == 0 ? '活动公告' : '游戏公告',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
             IconButton(
               icon: Icon(themeProvider.isDarkMode
                   ? Icons.wb_sunny
