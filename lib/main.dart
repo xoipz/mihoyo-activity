@@ -20,16 +20,33 @@ class _MyAppState extends State<MyApp> {
   bool isDarkMode = false;
 
   @override
+  void initState() {
+    super.initState();
+    _loadDarkModePreference();
+  }
+
+  Future<void> _loadDarkModePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      isDarkMode = prefs.getBool('isDarkMode') ?? false;
+    });
+  }
+
+  Future<void> _toggleDarkMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      isDarkMode = !isDarkMode;
+    });
+    await prefs.setBool('isDarkMode', isDarkMode);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '游戏活动',
       theme: isDarkMode ? ThemeData.dark() : ThemeData.light(),
       home: AnnouncementPage(
-        onToggleDarkMode: () {
-          setState(() {
-            isDarkMode = !isDarkMode;
-          });
-        },
+        onToggleDarkMode: _toggleDarkMode,
         isDarkMode: isDarkMode,
       ),
     );
@@ -46,7 +63,8 @@ class AnnouncementPage extends StatefulWidget {
   _AnnouncementPageState createState() => _AnnouncementPageState();
 }
 
-class _AnnouncementPageState extends State<AnnouncementPage> {
+class _AnnouncementPageState extends State<AnnouncementPage>
+    with SingleTickerProviderStateMixin {
   List<dynamic> genshinAnnouncements = [];
   List<dynamic> starRailAnnouncements = [];
   bool isLoading = false;
@@ -55,6 +73,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
   String _connectionStatus = 'Unknown';
   final Connectivity _connectivity = Connectivity();
   StreamSubscription<ConnectivityResult>? _subscription;
+  late TabController _tabController;
 
   @override
   void initState() {
@@ -63,11 +82,21 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
     _subscription =
         _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
     _loadCachedAnnouncements();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging || _tabController.index != _selectedGameTab) {
+        setState(() {
+          _selectedGameTab = _tabController.index;
+          _selectedAnnouncementTab = 0;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     _subscription?.cancel();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -138,8 +167,9 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
             }
           }
 
-          activityAnnouncements.sort((a, b) => _getRemainingDuration(a['end_time'])
-              .compareTo(_getRemainingDuration(b['end_time'])));
+          activityAnnouncements.sort((a, b) =>
+              _getRemainingDuration(a['end_time'])
+                  .compareTo(_getRemainingDuration(b['end_time'])));
           gameAnnouncements.sort((a, b) => _getRemainingDuration(a['end_time'])
               .compareTo(_getRemainingDuration(b['end_time'])));
 
@@ -187,7 +217,9 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
         if (jsonData['retcode'] == 0) {
           List<dynamic> allAnnouncements = jsonData['data']['list'] ?? [];
           List<dynamic> picAnnouncements =
-              (jsonData['data']['pic_list']?.isNotEmpty ?? false) ? jsonData['data']['pic_list'][0]['type_list'] ?? [] : [];
+              (jsonData['data']['pic_list']?.isNotEmpty ?? false)
+                  ? jsonData['data']['pic_list'][0]['type_list'] ?? []
+                  : [];
           List<dynamic> starRailNotices = [];
           List<dynamic> starRailNotices2 = [];
 
@@ -239,47 +271,23 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
 
   @override
   Widget build(BuildContext context) {
+    bool isWideScreen = MediaQuery.of(context).size.width > 800;
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('游戏活动'),
-              Text('$_connectionStatus', style: TextStyle(fontSize: 14)),
-            ],
-          ),
-          bottom: TabBar(
-            onTap: (index) {
-              setState(() {
-                _selectedGameTab = index;
-                _selectedAnnouncementTab = 0;
-              });
-            },
-            tabs: [
-              Tab(text: '原神'),
-              Tab(text: '星穹铁道'),
-            ],
-          ),
+          title: Text('游戏活动'),
+          bottom: isWideScreen
+              ? null
+              : PreferredSize(
+                  preferredSize: Size.fromHeight(0),
+                  child: Container(),
+                ),
           actions: [
             IconButton(
-              icon: Icon(widget.isDarkMode ? Icons.wb_sunny : Icons.nightlight_round),
+              icon: Icon(
+                  widget.isDarkMode ? Icons.wb_sunny : Icons.nightlight_round),
               onPressed: widget.onToggleDarkMode,
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _selectedAnnouncementTab =
-                      _selectedAnnouncementTab == 0 ? 1 : 0;
-                });
-              },
-              child: Text(
-                _selectedAnnouncementTab == 0 ? '活动公告' : '游戏公告',
-                style: TextStyle(
-                  color: widget.isDarkMode ? Colors.white : Colors.black,
-                ),
-              ),
             ),
             IconButton(
               icon: isLoading
@@ -302,58 +310,50 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
             ),
           ],
         ),
-        body: Column(
+        body: TabBarView(
+          controller: _tabController,
           children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  children: [
-                    SizedBox(height: 10),
-                    Expanded(
-                      child: IndexedStack(
-                        index: _selectedGameTab,
-                        children: [
-                          IndexedStack(
-                            index: _selectedAnnouncementTab,
-                            children: [
-                              _buildAnnouncementList(
-                                  genshinAnnouncements.firstWhere(
-                                      (element) =>
-                                          element['type_label'] == '活动公告',
-                                      orElse: () => {'list': []})['list']),
-                              _buildAnnouncementList(
-                                  genshinAnnouncements.firstWhere(
-                                      (element) =>
-                                          element['type_label'] == '游戏公告',
-                                      orElse: () => {'list': []})['list']),
-                            ],
-                          ),
-                          IndexedStack(
-                            index: _selectedAnnouncementTab,
-                            children: [
-                              _buildAnnouncementList(
-                                  starRailAnnouncements.firstWhere(
-                                      (element) =>
-                                          element['type_label'] == '活动公告',
-                                      orElse: () => {'list': []})['list']),
-                              _buildAnnouncementList(
-                                  starRailAnnouncements.firstWhere(
-                                      (element) =>
-                                          element['type_label'] == '游戏公告',
-                                      orElse: () => {'list': []})['list']),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            _buildAnnouncementContent(genshinAnnouncements),
+            _buildAnnouncementContent(starRailAnnouncements),
           ],
         ),
+        bottomNavigationBar: !isWideScreen
+            ? BottomNavigationBar(
+                currentIndex: _selectedGameTab,
+                onTap: (index) {
+                  setState(() {
+                    _selectedGameTab = index;
+                    _selectedAnnouncementTab = 0;
+                  });
+                  _tabController.animateTo(index);
+                },
+                items: [
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.gamepad),
+                    label: '原神',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.train),
+                    label: '星穹铁道',
+                  ),
+                ],
+              )
+            : null,
       ),
+    );
+  }
+
+  Widget _buildAnnouncementContent(List<dynamic> announcements) {
+    return IndexedStack(
+      index: _selectedAnnouncementTab,
+      children: [
+        _buildAnnouncementList(announcements.firstWhere(
+            (element) => element['type_label'] == '活动公告',
+            orElse: () => {'list': []})['list']),
+        _buildAnnouncementList(announcements.firstWhere(
+            (element) => element['type_label'] == '游戏公告',
+            orElse: () => {'list': []})['list']),
+      ],
     );
   }
 
@@ -373,14 +373,15 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
           itemCount: items.length,
           itemBuilder: (context, index) {
             final item = items[index];
-            Duration remainingDuration = _getRemainingDuration(item['end_time'] ?? '');
+            Duration remainingDuration =
+                _getRemainingDuration(item['end_time'] ?? '');
             String remainingTimeText;
             if (remainingDuration.inDays > 0) {
-              remainingTimeText = '还有 ${remainingDuration.inDays} 天结束';
+              remainingTimeText = '${remainingDuration.inDays} 天后结束';
             } else if (remainingDuration.inHours > 0) {
-              remainingTimeText = '还有 ${remainingDuration.inHours} 小时结束';
+              remainingTimeText = '${remainingDuration.inHours} 小时后结束';
             } else if (remainingDuration.inMinutes > 0) {
-              remainingTimeText = '还有 ${remainingDuration.inMinutes} 分钟结束';
+              remainingTimeText = '${remainingDuration.inMinutes} 分钟后结束';
             } else {
               remainingTimeText = '活动已结束';
             }
