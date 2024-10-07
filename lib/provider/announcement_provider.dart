@@ -55,4 +55,10 @@ class AnnouncementProvider extends ChangeNotifier {
     _saveMarkedAnnouncements();
     notifyListeners();
   }
+
+  // 新增的方法
+  void showAllAnnouncements() {
+    _markedAnnouncements.clear(); // 清除过滤条件
+    notifyListeners(); // 通知监听者
+  }
 }

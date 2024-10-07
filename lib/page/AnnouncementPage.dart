@@ -246,6 +246,15 @@ class _AnnouncementPageState extends State<AnnouncementPage>
               ),
             ),
             IconButton(
+              icon: Icon(Icons.restore), // 显示所有公告的按钮图标
+              onPressed: () {
+                setState(() {
+                  // 清空过滤条件，恢复显示所有公告
+                  announcementProvider.showAllAnnouncements();
+                });
+              },
+            ),
+            IconButton(
               icon: Icon(themeProvider.isDarkMode
                   ? Icons.wb_sunny
                   : Icons.nightlight_round),
@@ -371,6 +380,11 @@ class _AnnouncementPageState extends State<AnnouncementPage>
         .where((item) => !announcementProvider.markedAnnouncements
             .contains(item['ann_id'].toString()))
         .toList();
+
+    // 如果没有过滤条件，显示所有公告
+    if (announcementProvider.markedAnnouncements.isEmpty) {
+      filteredItems = items;
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
