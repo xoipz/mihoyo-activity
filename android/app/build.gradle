@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.flutter_application_1"
+    namespace = "com.example.xmihoyo"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -42,4 +42,12 @@ android {
 
 flutter {
     source = "../.."
+}
+
+// 添加 Glide 依赖项
+dependencies {
+    implementation 'com.github.bumptech.glide:glide:4.12.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.12.0'
+
+    // 其他依赖项（如果有）
 }

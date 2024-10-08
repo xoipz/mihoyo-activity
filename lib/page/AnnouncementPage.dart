@@ -10,6 +10,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:xmihoyo/provider/announcement_provider.dart';
+import 'package:xmihoyo/utils/WidgetUpdateHelper.dart';
 
 class AnnouncementPage extends StatefulWidget {
   @override
@@ -110,6 +111,9 @@ class _AnnouncementPageState extends State<AnnouncementPage>
 
     await fetchGenshinAnnouncements();
     await fetchStarRailAnnouncements();
+    // 更新 Android 小组件
+    await WidgetUpdateHelper.updateWidget(announcements);
+    print("123");
   }
 
   Future<void> fetchGenshinAnnouncements() async {
@@ -442,7 +446,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount > 0 ? crossAxisCount : 1,
-            childAspectRatio: itemWidth / 230,
+            childAspectRatio: itemWidth / 270,
             mainAxisSpacing: 8.0,
             crossAxisSpacing: 8.0,
           ),
