@@ -5,7 +5,7 @@ import 'dart:convert';
 class AnnouncementProvider extends ChangeNotifier {
   Set<String> _markedAnnouncements = {};
   List<dynamic> _markedAnnouncementsData = [];
-  bool _showAllAnnouncements = false; // 新增变量，控制是否显示所有公告
+  bool _showAllAnnouncements = false;
 
   Set<String> get markedAnnouncements => _markedAnnouncements;
   List<dynamic> get markedAnnouncementsData => _markedAnnouncementsData;
@@ -45,7 +45,7 @@ class AnnouncementProvider extends ChangeNotifier {
   void removeMarkedAnnouncement(String annId) {
     _markedAnnouncements.remove(annId);
     _markedAnnouncementsData.removeWhere((element) {
-      return element['ann_id'].toString() == annId;
+      return element['id'].toString() == annId;
     });
     _saveMarkedAnnouncements();
     notifyListeners();
@@ -58,7 +58,6 @@ class AnnouncementProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 新增的方法，切换显示所有公告和应用过滤条件
   void toggleShowAllAnnouncements() {
     _showAllAnnouncements = !_showAllAnnouncements;
     notifyListeners();

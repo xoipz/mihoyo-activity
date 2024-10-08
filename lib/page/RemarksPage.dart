@@ -34,7 +34,7 @@ class _RemarksPageState extends State<RemarksPage> {
               itemCount: markedAnnouncements.length,
               itemBuilder: (context, index) {
                 var item = markedAnnouncements[index];
-                String annId = item['ann_id'].toString();
+                String annId = item['id'].toString();
                 return Card(
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -59,9 +59,9 @@ class _RemarksPageState extends State<RemarksPage> {
                         SizedBox(height: 10),
                         Text('公告标题: ${item['title'] ?? "无标题"}'),
                         CachedNetworkImage(
-                          imageUrl: item['banner']?.isNotEmpty == true
-                              ? item['banner']
-                              : item['img'] ?? 'https://example.com.jpg',
+                          imageUrl: item['img']?.isNotEmpty == true
+                              ? item['img']
+                              : 'https://example.com.jpg',
                           fit: BoxFit.cover,
                           width: double.infinity,
                           placeholder: (context, url) =>

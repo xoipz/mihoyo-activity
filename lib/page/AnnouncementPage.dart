@@ -18,8 +18,35 @@ class AnnouncementPage extends StatefulWidget {
 
 class _AnnouncementPageState extends State<AnnouncementPage>
     with SingleTickerProviderStateMixin {
-  List<dynamic> genshinAnnouncements = [];
-  List<dynamic> starRailAnnouncements = [];
+  List<dynamic> announcements = [
+    {
+      "name": "原神",
+      "list": [
+        {
+          "header": "游戏活动",
+          "list": [],
+        },
+        {
+          "header": "游戏公告",
+          "list": [],
+        }
+      ]
+    },
+    {
+      "name": "星穹铁道",
+      "list": [
+        {
+          "header": "游戏活动",
+          "list": [],
+        },
+        {
+          "header": "游戏公告",
+          "list": [],
+        }
+      ]
+    }
+  ];
+
   bool isLoading = false;
   int _selectedGameTab = 0;
   int _selectedAnnouncementTab = 0;
@@ -27,7 +54,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
   final Connectivity _connectivity = Connectivity();
   StreamSubscription<ConnectivityResult>? _subscription;
   late TabController _tabController;
-  bool _showAllAnnouncements = false; // 新增变量
+  bool _showAllAnnouncements = false;
 
   @override
   void initState() {
@@ -36,7 +63,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     _subscription =
         _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
     _loadCachedAnnouncements();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: announcements.length, vsync: this);
     _tabController.addListener(() {
       if (_tabController.index != _selectedGameTab) {
         setState(() {
@@ -73,15 +100,11 @@ class _AnnouncementPageState extends State<AnnouncementPage>
 
   Future<void> _loadCachedAnnouncements() async {
     final prefs = await SharedPreferences.getInstance();
-    final genshinData = prefs.getString('genshinAnnouncements');
-    final starRailData = prefs.getString('starRailAnnouncements');
+    final cachedData = prefs.getString('announcements');
 
     setState(() {
-      if (genshinData != null) {
-        genshinAnnouncements = json.decode(genshinData);
-      }
-      if (starRailData != null) {
-        starRailAnnouncements = json.decode(starRailData);
+      if (cachedData != null) {
+        announcements = json.decode(cachedData);
       }
     });
 
@@ -116,6 +139,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
             }
           }
 
+          // **添加排序逻辑**
           activityAnnouncements.sort((a, b) =>
               _getRemainingDuration(a['end_time'])
                   .compareTo(_getRemainingDuration(b['end_time'])));
@@ -123,15 +147,39 @@ class _AnnouncementPageState extends State<AnnouncementPage>
               .compareTo(_getRemainingDuration(b['end_time'])));
 
           setState(() {
-            genshinAnnouncements = [
-              {'type_label': '活动公告', 'list': activityAnnouncements},
-              {'type_label': '游戏公告', 'list': gameAnnouncements},
+            announcements[0]['list'] = [
+              {
+                'header': '游戏活动',
+                'list': activityAnnouncements
+                    .map((item) => {
+                          'id': item['ann_id'],
+                          'title': item['subtitle'] ?? item['title'] ?? '',
+                          'subtitle': item['title'] ?? item['subtitle'] ?? '',
+                          'img': item['banner'] ?? item['img'] ?? '',
+                          'remake': false,
+                          'start_time': item['start_time'] ?? '',
+                          'end_time': item['end_time'] ?? ''
+                        })
+                    .toList()
+              },
+              {
+                'header': '游戏公告',
+                'list': gameAnnouncements
+                    .map((item) => {
+                          'id': item['ann_id'],
+                          'title': item['title'] ?? '',
+                          'subtitle': item['subtitle'] ?? '',
+                          'img': item['banner'] ?? item['img'] ?? '',
+                          'remake': false,
+                          'start_time': item['start_time'] ?? '',
+                          'end_time': item['end_time'] ?? ''
+                        })
+                    .toList()
+              }
             ];
           });
 
-          // Save to cache
-          await prefs.setString(
-              'genshinAnnouncements', json.encode(genshinAnnouncements));
+          await prefs.setString('announcements', json.encode(announcements));
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -169,29 +217,61 @@ class _AnnouncementPageState extends State<AnnouncementPage>
               (jsonData['data']['pic_list']?.isNotEmpty ?? false)
                   ? jsonData['data']['pic_list'][0]['type_list'] ?? []
                   : [];
-          List<dynamic> starRailNotices = [];
-          List<dynamic> starRailNotices2 = [];
+          List<dynamic> activityAnnouncements = [];
+          List<dynamic> gameAnnouncements = [];
 
           for (var category in allAnnouncements) {
-            starRailNotices2.addAll(category['list'] ?? []);
+            if (category['type_label'] == '活动公告') {
+              activityAnnouncements.addAll(category['list'] ?? []);
+            } else {
+              gameAnnouncements.addAll(category['list'] ?? []);
+            }
           }
           for (var category in picAnnouncements) {
-            starRailNotices.addAll(category['list'] ?? []);
+            activityAnnouncements.addAll(category['list'] ?? []);
           }
 
-          starRailNotices.sort((a, b) => _getRemainingDuration(a['end_time'])
+          // **添加排序逻辑**
+          activityAnnouncements.sort((a, b) =>
+              _getRemainingDuration(a['end_time'])
+                  .compareTo(_getRemainingDuration(b['end_time'])));
+          gameAnnouncements.sort((a, b) => _getRemainingDuration(a['end_time'])
               .compareTo(_getRemainingDuration(b['end_time'])));
 
           setState(() {
-            starRailAnnouncements = [
-              {'type_label': '活动公告', 'list': starRailNotices},
-              {'type_label': '游戏公告', 'list': starRailNotices2},
+            announcements[1]['list'] = [
+              {
+                'header': '游戏活动',
+                'list': activityAnnouncements
+                    .map((item) => {
+                          'id': item['ann_id'],
+                          'title': item['title'] ?? '',
+                          'subtitle': item['subtitle'] ?? '',
+                          'img': item['img'] ?? item['banner'] ?? '',
+                          'remake': false,
+                          'start_time': item['start_time'] ?? '',
+                          'end_time': item['end_time'] ?? ''
+                        })
+                    .toList()
+              },
+              {
+                'header': '游戏公告',
+                'list': gameAnnouncements
+                    .map((item) => {
+                          'id': item['ann_id'],
+                          'title': item['title'] ?? '',
+                          'subtitle': item['subtitle'] ?? '',
+                          'img': item['banner'] ?? item['img'] ?? '',
+                          'remake': false,
+                          'start_time': item['start_time'] ?? '',
+                          'end_time': item['end_time'] ?? ''
+                        })
+                    .toList()
+              }
             ];
           });
 
-          // Save to cache
-          await prefs.setString(
-              'starRailAnnouncements', json.encode(starRailAnnouncements));
+          await prefs.setString('announcements', json.encode(announcements));
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -224,7 +304,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     final announcementProvider = Provider.of<AnnouncementProvider>(context);
     bool isWideScreen = MediaQuery.of(context).size.width > 800;
     return DefaultTabController(
-      length: 2,
+      length: announcements.length,
       child: Scaffold(
         appBar: AppBar(
           title: Text(
@@ -234,26 +314,13 @@ class _AnnouncementPageState extends State<AnnouncementPage>
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _selectedAnnouncementTab = (_selectedAnnouncementTab + 1) % 2;
-                });
-              },
-              child: Text(
-                _selectedAnnouncementTab == 0 ? '活动公告' : '游戏公告',
-                style: TextStyle(
-                  color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                ),
-              ),
-            ),
             IconButton(
               icon: Icon(_showAllAnnouncements
                   ? Icons.filter_alt_off
-                  : Icons.filter_alt), // 切换显示图标
+                  : Icons.filter_alt),
               onPressed: () {
                 setState(() {
-                  _showAllAnnouncements = !_showAllAnnouncements; // 切换显示状态
+                  _showAllAnnouncements = !_showAllAnnouncements;
                 });
               },
             ),
@@ -308,26 +375,20 @@ class _AnnouncementPageState extends State<AnnouncementPage>
                   _tabController.animateTo(index);
                 },
                 labelType: NavigationRailLabelType.all,
-                destinations: [
-                  NavigationRailDestination(
-                    icon: Icon(Icons.gamepad),
-                    label: Text('原神'),
-                  ),
-                  NavigationRailDestination(
-                    icon: Icon(Icons.train),
-                    label: Text('星穹铁道'),
-                  ),
-                ],
+                destinations: announcements
+                    .map((game) => NavigationRailDestination(
+                          icon: Icon(Icons.gamepad), // 根据游戏名称设置图标
+                          label: Text(game['name']),
+                        ))
+                    .toList(),
               ),
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: [
-                  _buildAnnouncementContent(
-                      genshinAnnouncements, announcementProvider),
-                  _buildAnnouncementContent(
-                      starRailAnnouncements, announcementProvider),
-                ],
+                children: announcements.map((game) {
+                  return _buildAnnouncementContent(
+                      game['list'], announcementProvider);
+                }).toList(),
               ),
             ),
           ],
@@ -342,16 +403,12 @@ class _AnnouncementPageState extends State<AnnouncementPage>
                   });
                   _tabController.animateTo(index);
                 },
-                items: [
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.gamepad),
-                    label: '原神',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.train),
-                    label: '星穹铁道',
-                  ),
-                ],
+                items: announcements
+                    .map((game) => BottomNavigationBarItem(
+                          icon: Icon(Icons.gamepad), // 根据游戏名称设置图标
+                          label: game['name'],
+                        ))
+                    .toList(),
               )
             : null,
       ),
@@ -359,31 +416,22 @@ class _AnnouncementPageState extends State<AnnouncementPage>
   }
 
   Widget _buildAnnouncementContent(
-      List<dynamic> announcements, AnnouncementProvider announcementProvider) {
+      List<dynamic> gameList, AnnouncementProvider announcementProvider) {
     return IndexedStack(
       index: _selectedAnnouncementTab,
-      children: [
-        _buildAnnouncementList(
-            announcements.firstWhere(
-                (element) => element['type_label'] == '活动公告',
-                orElse: () => {'list': []})['list'] as List<dynamic>,
-            announcementProvider),
-        _buildAnnouncementList(
-            announcements.firstWhere(
-                (element) => element['type_label'] == '游戏公告',
-                orElse: () => {'list': []})['list'] as List<dynamic>,
-            announcementProvider),
-      ],
+      children: gameList.map((section) {
+        return _buildAnnouncementList(section['list'], announcementProvider);
+      }).toList(),
     );
   }
 
   Widget _buildAnnouncementList(
       List<dynamic> items, AnnouncementProvider announcementProvider) {
     List<dynamic> filteredItems = _showAllAnnouncements
-        ? items // 如果显示所有公告，则不过滤
+        ? items
         : items
             .where((item) => !announcementProvider.markedAnnouncements
-                .contains(item['ann_id'].toString()))
+                .contains(item['id'].toString()))
             .toList();
 
     return LayoutBuilder(
@@ -401,7 +449,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
           itemCount: filteredItems.length,
           itemBuilder: (context, index) {
             final item = filteredItems[index];
-            final annId = item['ann_id'].toString();
+            final annId = item['id'].toString();
             bool isMarked =
                 announcementProvider.markedAnnouncements.contains(annId);
 
@@ -429,9 +477,7 @@ class _AnnouncementPageState extends State<AnnouncementPage>
                       children: [
                         Flexible(
                           child: Text(
-                            (item['subtitle'] ?? '') != ''
-                                ? item['subtitle']
-                                : item['title'],
+                            item['title'],
                             style: TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.bold),
                             overflow: TextOverflow.ellipsis,
@@ -462,15 +508,12 @@ class _AnnouncementPageState extends State<AnnouncementPage>
                     SizedBox(height: 5),
                     Text(item['subtitle'] ?? 'No Subtitle'),
                     SizedBox(height: 5),
-                    (item['banner'] != null && item['banner'].isNotEmpty) ||
-                            (item['img'] != null && item['img'].isNotEmpty)
+                    (item['img'] != null && item['img'].isNotEmpty)
                         ? Expanded(
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8.0),
                               child: CachedNetworkImage(
-                                imageUrl: item['banner']?.isNotEmpty == true
-                                    ? item['banner']
-                                    : item['img'],
+                                imageUrl: item['img'],
                                 fit: BoxFit.cover,
                                 width: double.infinity,
                                 placeholder: (context, url) =>
