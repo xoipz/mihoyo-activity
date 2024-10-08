@@ -1,0 +1,39 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="8dp"
+    android:gravity="center_vertical">
+
+    <!-- 公告图片 -->
+    <ImageView
+        android:id="@+id/img_announcement"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:contentDescription="公告图片" />
+
+    <!-- 公告标题和剩余天数 -->
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:paddingLeft="8dp">
+
+        <TextView
+            android:id="@+id/txt_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="公告标题"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txt_days_left"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="天数"
+            android:textSize="14sp" />
+    </LinearLayout>
+</LinearLayout>

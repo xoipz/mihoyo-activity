@@ -112,8 +112,9 @@ class _AnnouncementPageState extends State<AnnouncementPage>
     await fetchGenshinAnnouncements();
     await fetchStarRailAnnouncements();
     // 更新 Android 小组件
+
     await WidgetUpdateHelper.updateWidget(announcements);
-    print("123");
+    print("更新安卓组件完毕");
   }
 
   Future<void> fetchGenshinAnnouncements() async {
